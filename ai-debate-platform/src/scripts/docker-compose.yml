@@ -1,0 +1,44 @@
+version: "3.8"
+services:
+  mongo:
+    image: mongo:6.0
+    restart: unless-stopped
+    volumes:
+      - mongo-data:/data/db
+    ports:
+      - "27017:27017"
+
+  ml-api:
+    build:
+      context: ./ml_api
+    container_name: ml-api
+    restart: on-failure
+    environment:
+      - TRANSFORMERS_CACHE=/models
+    volumes:
+      - ml-model-cache:/models
+    ports:
+      - "5001:5001"
+    depends_on:
+      - mongo
+
+  backend:
+    build:
+      context: .
+      dockerfile: Dockerfile.node
+    container_name: debate-backend
+    restart: on-failure
+    environment:
+      - MONGODB_URI=mongodb://mongo:27017/debateDB
+      - JWT_SECRET=change_this
+      - ML_API_URL=http://ml-api:5001
+      - PORT=5000
+    ports:
+      - "5000:5000"
+    depends_on:
+      - ml-api
+      - mongo
+
+volumes:
+  mongo-data:
+  ml-model-cache:

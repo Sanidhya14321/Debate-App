@@ -1,0 +1,6 @@
+flask==2.3.3
+flask-cors==3.0.10
+transformers==4.40.0
+sentence-transformers==2.2.2
+torch==2.2.0
+numpy==1.26.0
