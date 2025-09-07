@@ -1,25 +1,72 @@
+'use client';
+
 import { Button } from '@/components/ui/button';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
+import { useToast } from '@/hooks/use-toast';
 import { BrainCircuit, Flame, MessageSquareQuote } from 'lucide-react';
 import Image from 'next/image';
-import Link from 'next/link';
+import { useRouter } from 'next/navigation';
+import { useEffect, useState } from 'react';
 
 export default function Home() {
+  const router = useRouter();
+  const { toast } = useToast();
+  const [token, setToken] = useState<string | null>(null);
+
+  useEffect(() => {
+    setToken(localStorage.getItem('token'));
+  }, []);
+
+  const handleStartDebate = async () => {
+    if (!token) {
+      router.push('/login');
+      return;
+    }
+
+    try {
+      const response = await fetch('http://localhost:4000/debates', {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+          Authorization: `Bearer ${token}`,
+        },
+        body: JSON.stringify({ topic: 'New Debate' }),
+      });
+
+      if (!response.ok) {
+        throw new Error('Failed to create debate.');
+      }
+
+      const data = await response.json();
+      router.push(`/debate-room/${data.id}`);
+    } catch (error) {
+      toast({
+        variant: 'destructive',
+        title: 'Error',
+        description:
+          error instanceof Error ? error.message : 'An unknown error occurred.',
+      });
+    }
+  };
+
   const features = [
     {
       icon: <BrainCircuit className="h-10 w-10 text-primary" />,
       title: 'Logical Consistency',
-      description: 'NLP models analyze the structure of your arguments for coherence and validity.',
+      description:
+        'NLP models analyze the structure of your arguments for coherence and validity.',
     },
     {
       icon: <MessageSquareQuote className="h-10 w-10 text-primary" />,
       title: 'Persuasiveness',
-      description: 'Sentiment and emotion detection algorithms measure the impact of your rhetoric.',
+      description:
+        'Sentiment and emotion detection algorithms measure the impact of your rhetoric.',
     },
     {
       icon: <Flame className="h-10 w-10 text-primary" />,
       title: 'Engagement',
-      description: 'Scoring is based on the strength, frequency, and relevance of your arguments.',
+      description:
+        'Scoring is based on the strength, frequency, and relevance of your arguments.',
     },
   ];
 
@@ -34,8 +81,12 @@ export default function Home() {
             Debate. Compete. Get AI-Scored Feedback. Sharpen your arguments and
             master the art of persuasion with instant, data-driven insights.
           </p>
-          <Button asChild size="lg" className="shadow-lg shadow-primary/20">
-            <Link href="/debate-room">Start a Debate</Link>
+          <Button
+            onClick={handleStartDebate}
+            size="lg"
+            className="shadow-lg shadow-primary/20"
+          >
+            Start a Debate
           </Button>
         </div>
         <div className="flex justify-center">
@@ -61,7 +112,10 @@ export default function Home() {
         </div>
         <div className="mt-12 grid grid-cols-1 gap-8 md:grid-cols-3">
           {features.map((feature) => (
-            <Card key={feature.title} className="transform transition-transform duration-300 hover:scale-105 hover:shadow-xl">
+            <Card
+              key={feature.title}
+              className="transform transition-transform duration-300 hover:scale-105 hover:shadow-xl"
+            >
               <CardHeader className="items-center">
                 {feature.icon}
                 <CardTitle className="mt-4 text-2xl">{feature.title}</CardTitle>
